@@ -23,8 +23,6 @@ DEPLOY_SSH_PUBLIC_KEY="$(cat "$DEPLOY_PUBKEY")" \
   ansible-playbook -i inventory/hosts.yml playbook.yml --limit dev -u admin
 ```
 
-Przed oddaniem zastąp `imie_nazwisko` w nazwie ZIP swoimi danymi.
-
 Dla środowiska produkcyjnego użyj `--limit prod`. Jeśli sudo wymaga hasła, dodaj `--ask-become-pass`.
 
 ## Weryfikacja
