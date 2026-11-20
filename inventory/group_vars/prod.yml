@@ -1,0 +1,4 @@
+---
+webserver_environment: prod
+webserver_port: 80
+welcome_message: "Witaj w środowisku produkcyjnym!"

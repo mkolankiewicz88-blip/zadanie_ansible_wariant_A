@@ -1,0 +1,4 @@
+---
+webserver_environment: dev
+webserver_port: 8008
+welcome_message: "Witaj w środowisku deweloperskim!"

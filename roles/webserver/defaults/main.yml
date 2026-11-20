@@ -1,0 +1,2 @@
+---
+deploy_ssh_public_key: "{{ lookup('ansible.builtin.env', 'DEPLOY_SSH_PUBLIC_KEY') }}"

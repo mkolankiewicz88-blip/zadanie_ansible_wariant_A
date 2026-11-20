@@ -1,0 +1,71 @@
+---
+- name: Sprawdź parametry wdrożenia
+  ansible.builtin.assert:
+    that:
+      - webserver_environment in ['dev', 'prod']
+      - webserver_port is integer
+      - webserver_port >= 1 and webserver_port <= 65535
+      - welcome_message is string
+      - (deploy_ssh_public_key | default('') | trim) is match('^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521)) [A-Za-z0-9+/]+={0,2}( [^\r\n]*)?$')
+      - (deploy_ssh_public_key | default('') | trim).splitlines() | length == 1
+    fail_msg: Podaj port TCP, środowisko, tekst powitania i jeden publiczny klucz SSH użytkownika deploy.
+
+- name: Zainstaluj nginx
+  ansible.builtin.dnf:
+    name: nginx
+    state: present
+
+- name: Utwórz grupę deploy
+  ansible.builtin.group:
+    name: deploy
+    state: present
+
+- name: Utwórz konto deploy
+  ansible.builtin.user:
+    name: deploy
+    group: deploy
+    home: /home/deploy
+    create_home: true
+    shell: /bin/bash
+    password_lock: true
+    state: present
+
+- name: Utwórz katalog SSH użytkownika deploy
+  ansible.builtin.file:
+    path: /home/deploy/.ssh
+    state: directory
+    owner: deploy
+    group: deploy
+    mode: '0700'
+
+- name: Ustaw klucz publiczny użytkownika deploy
+  ansible.builtin.copy:
+    content: "{{ deploy_ssh_public_key | trim }}\n"
+    dest: /home/deploy/.ssh/authorized_keys
+    owner: deploy
+    group: deploy
+    mode: '0600'
+
+- name: Wdróż stronę startową
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /usr/share/nginx/html/index.html
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Wdróż zweryfikowaną konfigurację nginx
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+    validate: "/usr/sbin/nginx -t -c %s"
+  notify: Przeładuj nginx
+
+- name: Uruchom nginx i włącz start przy rozruchu
+  ansible.builtin.systemd_service:
+    name: nginx
+    enabled: true
+    state: started
